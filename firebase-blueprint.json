@@ -1,0 +1,427 @@
+{
+  "entities": {
+    "UnitProfile": {
+      "title": "UnitProfile",
+      "description": "Subdistrict Health Promoting Hospital (รพ.สต.) unit configuration and SSO target metadata.",
+      "type": "object",
+      "properties": {
+        "unitCode": {
+          "type": "string",
+          "description": "Hospital/Unit code (รหัสหน่วยงาน)",
+          "minLength": 1,
+          "maxLength": 20,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "unitName": {
+          "type": "string",
+          "description": "Unit name (ชื่อหน่วยงาน รพ.สต.)",
+          "minLength": 1,
+          "maxLength": 200
+        },
+        "districtName": {
+          "type": "string",
+          "description": "District Health Office name (สสอ. ต้นสังกัด)",
+          "maxLength": 150
+        },
+        "templateVersion": {
+          "type": "string",
+          "description": "Excel template version identifier",
+          "maxLength": 32
+        },
+        "ssoEndpointUrl": {
+          "type": "string",
+          "description": "Optional external SSO API endpoint URL",
+          "maxLength": 300
+        },
+        "ownerUid": {
+          "type": "string",
+          "description": "Authenticated owner UID",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server creation timestamp"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server update timestamp"
+        }
+      },
+      "required": [
+        "unitCode",
+        "unitName",
+        "districtName",
+        "templateVersion",
+        "ssoEndpointUrl",
+        "ownerUid",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "ClaimRecord": {
+      "title": "ClaimRecord",
+      "description": "Single reporting period row matching V.3 5367 Receivable-Payable template plus payable allocation.",
+      "type": "object",
+      "properties": {
+        "ownerUid": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "unitId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "seqNo": {
+          "type": "number",
+          "description": "ลำดับ"
+        },
+        "reportPeriod": {
+          "type": "string",
+          "description": "รายงานงวด",
+          "minLength": 1,
+          "maxLength": 120
+        },
+        "monthKey": {
+          "type": "string",
+          "description": "Normalized YYYY-MM key for monthly analytics",
+          "minLength": 7,
+          "maxLength": 7,
+          "pattern": "^\\d{4}-\\d{2}$"
+        },
+        "totalCases": { "type": "number" },
+        "claimedAmount": { "type": "number" },
+        "normalReceivedAmount": { "type": "number" },
+        "normalCompensatedCases": { "type": "number" },
+        "normalUncompensatedCases": { "type": "number" },
+        "appealReceivedAmount": { "type": "number" },
+        "appealReceivedCases": { "type": "number" },
+        "appealUncompensatedCases": { "type": "number" },
+        "herbalAmount": { "type": "number" },
+        "herbalCases": { "type": "number" },
+        "aeAmount": { "type": "number" },
+        "aeCases": { "type": "number" },
+        "ppAmount": { "type": "number" },
+        "ppCases": { "type": "number" },
+        "fsAmount": { "type": "number" },
+        "fsCases": { "type": "number" },
+        "summaryAmount": { "type": "number" },
+        "summaryCases": { "type": "number" },
+        "payableAmount": { "type": "number" },
+        "note": {
+          "type": "string",
+          "maxLength": 500
+        },
+        "importBatchId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "ownerUid",
+        "unitId",
+        "seqNo",
+        "reportPeriod",
+        "monthKey",
+        "totalCases",
+        "claimedAmount",
+        "normalReceivedAmount",
+        "normalCompensatedCases",
+        "normalUncompensatedCases",
+        "appealReceivedAmount",
+        "appealReceivedCases",
+        "appealUncompensatedCases",
+        "herbalAmount",
+        "herbalCases",
+        "aeAmount",
+        "aeCases",
+        "ppAmount",
+        "ppCases",
+        "fsAmount",
+        "fsCases",
+        "summaryAmount",
+        "summaryCases",
+        "payableAmount",
+        "note",
+        "importBatchId",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "SsoSubmission": {
+      "title": "SsoSubmission",
+      "description": "Audit log of monthly/period report submissions sent to District Health Office (สสอ.).",
+      "type": "object",
+      "properties": {
+        "ownerUid": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "unitId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "unitCode": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 20
+        },
+        "unitName": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 200
+        },
+        "monthKey": {
+          "type": "string",
+          "minLength": 3,
+          "maxLength": 20
+        },
+        "recordCount": { "type": "number" },
+        "totalCases": { "type": "number" },
+        "totalClaimedAmount": { "type": "number" },
+        "totalReceivedAmount": { "type": "number" },
+        "totalPayableAmount": { "type": "number" },
+        "netBalance": { "type": "number" },
+        "status": {
+          "type": "string",
+          "enum": ["submitted", "acknowledged"],
+          "maxLength": 32
+        },
+        "targetEndpoint": {
+          "type": "string",
+          "maxLength": 300
+        },
+        "submittedByEmail": {
+          "type": "string",
+          "maxLength": 200
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "ownerUid",
+        "unitId",
+        "unitCode",
+        "unitName",
+        "monthKey",
+        "recordCount",
+        "totalCases",
+        "totalClaimedAmount",
+        "totalReceivedAmount",
+        "totalPayableAmount",
+        "netBalance",
+        "status",
+        "targetEndpoint",
+        "submittedByEmail",
+        "createdAt"
+      ]
+    },
+    "ApiKeyRecord": {
+      "title": "ApiKeyRecord",
+      "description": "Hashed API key metadata for authenticating REST API consumers.",
+      "type": "object",
+      "properties": {
+        "ownerUid": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "unitId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "label": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 80
+        },
+        "keyPrefix": {
+          "type": "string",
+          "minLength": 4,
+          "maxLength": 24
+        },
+        "keyHash": {
+          "type": "string",
+          "minLength": 64,
+          "maxLength": 64,
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "status": {
+          "type": "string",
+          "enum": ["active", "revoked"],
+          "maxLength": 16
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "ownerUid",
+        "unitId",
+        "label",
+        "keyPrefix",
+        "keyHash",
+        "status",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "RepTransaction": {
+      "title": "RepTransaction",
+      "description": "Patient/transaction-level NHSO REP record categorized as normal (ข้อมูลปกติ) or appeal (ข้อมูลอุทธรณ์) per reporting period.",
+      "type": "object",
+      "properties": {
+        "ownerUid": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "unitId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "reportPeriod": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 120
+        },
+        "repCode": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 60
+        },
+        "monthKey": {
+          "type": "string",
+          "minLength": 7,
+          "maxLength": 7,
+          "pattern": "^\\d{4}-\\d{2}$"
+        },
+        "claimSection": {
+          "type": "string",
+          "enum": ["normal", "appeal"],
+          "maxLength": 16
+        },
+        "seq": { "type": "number" },
+        "tranId": { "type": "string", "maxLength": 40 },
+        "hn": { "type": "string", "maxLength": 32 },
+        "an": { "type": "string", "maxLength": 32 },
+        "pid": { "type": "string", "maxLength": 32 },
+        "fullName": { "type": "string", "maxLength": 150 },
+        "visitDate": { "type": "string", "maxLength": 40 },
+        "dischargeDate": { "type": "string", "maxLength": 40 },
+        "mainInscl": { "type": "string", "maxLength": 20 },
+        "projCode": { "type": "string", "maxLength": 40 },
+        "htypeHcode": { "type": "string", "maxLength": 20 },
+        "provHcode": { "type": "string", "maxLength": 20 },
+        "hcode": { "type": "string", "maxLength": 20 },
+        "claimed": { "type": "number" },
+        "op": { "type": "number" },
+        "ipPaid": { "type": "number" },
+        "hcTotal": { "type": "number" },
+        "aeTotal": { "type": "number" },
+        "pp": { "type": "number" },
+        "fs": { "type": "number" },
+        "otherPaid": { "type": "number" },
+        "totalComp": { "type": "number" },
+        "importBatchId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "ownerUid",
+        "unitId",
+        "reportPeriod",
+        "repCode",
+        "monthKey",
+        "claimSection",
+        "seq",
+        "tranId",
+        "hn",
+        "an",
+        "pid",
+        "fullName",
+        "visitDate",
+        "dischargeDate",
+        "mainInscl",
+        "projCode",
+        "htypeHcode",
+        "provHcode",
+        "hcode",
+        "claimed",
+        "op",
+        "ipPaid",
+        "hcTotal",
+        "aeTotal",
+        "pp",
+        "fs",
+        "otherPaid",
+        "totalComp",
+        "importBatchId",
+        "createdAt"
+      ]
+    }
+  },
+  "firestore": {
+    "/units/{unitId}": {
+      "schema": { "$ref": "#/entities/UnitProfile" },
+      "description": "Primary unit profile for a รพ.สต. owned by an authenticated user."
+    },
+    "/units/{unitId}/claimRecords/{recordId}": {
+      "schema": { "$ref": "#/entities/ClaimRecord" },
+      "description": "Claim and receivable-payable period rows imported from Excel V.3 5367."
+    },
+    "/units/{unitId}/ssoSubmissions/{submissionId}": {
+      "schema": { "$ref": "#/entities/SsoSubmission" },
+      "description": "Immutable submission logs sent to the District Health Office (สสอ.)."
+    },
+    "/units/{unitId}/apiKeys/{keyId}": {
+      "schema": { "$ref": "#/entities/ApiKeyRecord" },
+      "description": "Hashed API key records for REST API authentication."
+    },
+    "/units/{unitId}/repTransactions/{txId}": {
+      "schema": { "$ref": "#/entities/RepTransaction" },
+      "description": "Patient/transaction-level REP rows separated into normal (ข้อมูลปกติ) and appeal (ข้อมูลอุทธรณ์) per reportPeriod."
+    }
+  }
+}

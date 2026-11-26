@@ -1,0 +1,391 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Global safety net: deny everything by default
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // --- Primitive Helpers ---
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isVerified() {
+      return isSignedIn() && request.auth.token.email_verified == true;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() >= 1 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function isNonNegNum(val) {
+      return (val is int || val is float) && val >= 0 && val <= 1000000000;
+    }
+
+    function isUnitOwner(unitId) {
+      return exists(/databases/$(database)/documents/units/$(unitId))
+        && get(/databases/$(database)/documents/units/$(unitId)).data.ownerUid == request.auth.uid;
+    }
+
+    // --- Validation Blueprints ---
+    function isValidUnitProfile(data, unitId) {
+      return data.keys().hasAll([
+          'unitCode', 'unitName', 'districtName', 'templateVersion',
+          'ssoEndpointUrl', 'ownerUid', 'createdAt', 'updatedAt'
+        ])
+        && data.keys().hasOnly([
+          'unitCode', 'unitName', 'districtName', 'templateVersion',
+          'ssoEndpointUrl', 'ownerUid', 'createdAt', 'updatedAt'
+        ])
+        && data.unitCode is string && data.unitCode.size() >= 1 && data.unitCode.size() <= 20 && data.unitCode.matches('^[a-zA-Z0-9_\\-]+$')
+        && data.unitName is string && data.unitName.size() >= 1 && data.unitName.size() <= 200
+        && data.districtName is string && data.districtName.size() <= 150
+        && data.templateVersion is string && data.templateVersion.size() >= 1 && data.templateVersion.size() <= 32
+        && data.ssoEndpointUrl is string && data.ssoEndpointUrl.size() <= 300
+        && data.ownerUid is string && data.ownerUid.size() >= 1 && data.ownerUid.size() <= 128
+        && data.ownerUid == request.auth.uid
+        && data.ownerUid == unitId
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    function isValidClaimRecord(data, unitId) {
+      return data.keys().hasAll([
+          'ownerUid', 'unitId', 'seqNo', 'reportPeriod', 'monthKey',
+          'totalCases', 'claimedAmount',
+          'normalReceivedAmount', 'normalCompensatedCases', 'normalUncompensatedCases',
+          'appealReceivedAmount', 'appealReceivedCases', 'appealUncompensatedCases',
+          'herbalAmount', 'herbalCases',
+          'aeAmount', 'aeCases',
+          'ppAmount', 'ppCases',
+          'fsAmount', 'fsCases',
+          'summaryAmount', 'summaryCases',
+          'payableAmount', 'note', 'importBatchId',
+          'createdAt', 'updatedAt'
+        ])
+        && data.keys().hasOnly([
+          'ownerUid', 'unitId', 'seqNo', 'reportPeriod', 'monthKey',
+          'totalCases', 'claimedAmount',
+          'normalReceivedAmount', 'normalCompensatedCases', 'normalUncompensatedCases',
+          'appealReceivedAmount', 'appealReceivedCases', 'appealUncompensatedCases',
+          'herbalAmount', 'herbalCases',
+          'aeAmount', 'aeCases',
+          'ppAmount', 'ppCases',
+          'fsAmount', 'fsCases',
+          'summaryAmount', 'summaryCases',
+          'payableAmount', 'note', 'importBatchId',
+          'createdAt', 'updatedAt'
+        ])
+        && data.ownerUid is string && data.ownerUid.size() >= 1 && data.ownerUid.size() <= 128
+        && data.ownerUid == request.auth.uid
+        && data.unitId is string && data.unitId.size() >= 1 && data.unitId.size() <= 128
+        && data.unitId == unitId
+        && isNonNegNum(data.seqNo)
+        && data.reportPeriod is string && data.reportPeriod.size() >= 1 && data.reportPeriod.size() <= 120
+        && data.monthKey is string && data.monthKey.size() == 7 && data.monthKey.matches('^\\d{4}-\\d{2}$')
+        && isNonNegNum(data.totalCases)
+        && isNonNegNum(data.claimedAmount)
+        && isNonNegNum(data.normalReceivedAmount)
+        && isNonNegNum(data.normalCompensatedCases)
+        && isNonNegNum(data.normalUncompensatedCases)
+        && isNonNegNum(data.appealReceivedAmount)
+        && isNonNegNum(data.appealReceivedCases)
+        && isNonNegNum(data.appealUncompensatedCases)
+        && isNonNegNum(data.herbalAmount)
+        && isNonNegNum(data.herbalCases)
+        && isNonNegNum(data.aeAmount)
+        && isNonNegNum(data.aeCases)
+        && isNonNegNum(data.ppAmount)
+        && isNonNegNum(data.ppCases)
+        && isNonNegNum(data.fsAmount)
+        && isNonNegNum(data.fsCases)
+        && isNonNegNum(data.summaryAmount)
+        && isNonNegNum(data.summaryCases)
+        && isNonNegNum(data.payableAmount)
+        && data.note is string && data.note.size() <= 500
+        && data.importBatchId is string && data.importBatchId.size() >= 1 && data.importBatchId.size() <= 128
+        && data.importBatchId.matches('^[a-zA-Z0-9_\\-]+$')
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    function isValidSsoSubmission(data, unitId) {
+      return data.keys().hasAll([
+          'ownerUid', 'unitId', 'unitCode', 'unitName', 'monthKey',
+          'recordCount', 'totalCases', 'totalClaimedAmount',
+          'totalReceivedAmount', 'totalPayableAmount', 'netBalance',
+          'status', 'targetEndpoint', 'submittedByEmail', 'createdAt'
+        ])
+        && data.keys().hasOnly([
+          'ownerUid', 'unitId', 'unitCode', 'unitName', 'monthKey',
+          'recordCount', 'totalCases', 'totalClaimedAmount',
+          'totalReceivedAmount', 'totalPayableAmount', 'netBalance',
+          'status', 'targetEndpoint', 'submittedByEmail', 'createdAt'
+        ])
+        && data.ownerUid is string && data.ownerUid.size() >= 1 && data.ownerUid.size() <= 128
+        && data.ownerUid == request.auth.uid
+        && data.unitId is string && data.unitId.size() >= 1 && data.unitId.size() <= 128
+        && data.unitId == unitId
+        && data.unitCode is string && data.unitCode.size() >= 1 && data.unitCode.size() <= 20
+        && data.unitName is string && data.unitName.size() >= 1 && data.unitName.size() <= 200
+        && data.monthKey is string && data.monthKey.size() >= 3 && data.monthKey.size() <= 20
+        && isNonNegNum(data.recordCount)
+        && isNonNegNum(data.totalCases)
+        && isNonNegNum(data.totalClaimedAmount)
+        && isNonNegNum(data.totalReceivedAmount)
+        && isNonNegNum(data.totalPayableAmount)
+        && (data.netBalance is int || data.netBalance is float) && data.netBalance >= -1000000000 && data.netBalance <= 1000000000
+        && data.status is string && data.status.size() >= 1 && data.status.size() <= 32
+        && data.status in ['submitted', 'acknowledged']
+        && data.targetEndpoint is string && data.targetEndpoint.size() <= 300
+        && data.submittedByEmail is string && data.submittedByEmail.size() <= 200
+        && data.createdAt is timestamp;
+    }
+
+    function isValidApiKeyRecord(data, unitId) {
+      return data.keys().hasAll([
+          'ownerUid', 'unitId', 'label', 'keyPrefix',
+          'keyHash', 'status', 'createdAt', 'updatedAt'
+        ])
+        && data.keys().hasOnly([
+          'ownerUid', 'unitId', 'label', 'keyPrefix',
+          'keyHash', 'status', 'createdAt', 'updatedAt'
+        ])
+        && data.ownerUid is string && data.ownerUid.size() >= 1 && data.ownerUid.size() <= 128
+        && data.ownerUid == request.auth.uid
+        && data.unitId is string && data.unitId.size() >= 1 && data.unitId.size() <= 128
+        && data.unitId == unitId
+        && data.label is string && data.label.size() >= 1 && data.label.size() <= 80
+        && data.keyPrefix is string && data.keyPrefix.size() >= 4 && data.keyPrefix.size() <= 24
+        && data.keyHash is string && data.keyHash.size() == 64 && data.keyHash.matches('^[a-f0-9]{64}$')
+        && data.status is string && data.status.size() >= 1 && data.status.size() <= 16
+        && data.status in ['active', 'revoked']
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    function isValidRepTransaction(data, unitId) {
+      return data.keys().hasAll([
+          'ownerUid', 'unitId', 'reportPeriod', 'repCode', 'monthKey',
+          'claimSection', 'seq', 'tranId', 'hn', 'an', 'pid', 'fullName',
+          'visitDate', 'dischargeDate', 'mainInscl', 'projCode',
+          'htypeHcode', 'provHcode', 'hcode',
+          'claimed', 'op', 'ipPaid', 'hcTotal', 'aeTotal', 'pp', 'fs', 'otherPaid', 'totalComp',
+          'importBatchId', 'createdAt'
+        ])
+        && data.keys().hasOnly([
+          'ownerUid', 'unitId', 'reportPeriod', 'repCode', 'monthKey',
+          'claimSection', 'seq', 'tranId', 'hn', 'an', 'pid', 'fullName',
+          'visitDate', 'dischargeDate', 'mainInscl', 'projCode',
+          'htypeHcode', 'provHcode', 'hcode',
+          'claimed', 'op', 'ipPaid', 'hcTotal', 'aeTotal', 'pp', 'fs', 'otherPaid', 'totalComp',
+          'importBatchId', 'createdAt'
+        ])
+        && data.ownerUid is string && data.ownerUid.size() >= 1 && data.ownerUid.size() <= 128
+        && data.ownerUid == request.auth.uid
+        && data.unitId is string && data.unitId.size() >= 1 && data.unitId.size() <= 128
+        && data.unitId == unitId
+        && data.reportPeriod is string && data.reportPeriod.size() >= 1 && data.reportPeriod.size() <= 120
+        && data.repCode is string && data.repCode.size() >= 1 && data.repCode.size() <= 60
+        && data.monthKey is string && data.monthKey.size() == 7 && data.monthKey.matches('^\\d{4}-\\d{2}$')
+        && data.claimSection is string && data.claimSection.size() >= 1 && data.claimSection.size() <= 16
+        && data.claimSection in ['normal', 'appeal']
+        && isNonNegNum(data.seq)
+        && data.tranId is string && data.tranId.size() <= 40
+        && data.hn is string && data.hn.size() <= 32
+        && data.an is string && data.an.size() <= 32
+        && data.pid is string && data.pid.size() <= 32
+        && data.fullName is string && data.fullName.size() <= 150
+        && data.visitDate is string && data.visitDate.size() <= 40
+        && data.dischargeDate is string && data.dischargeDate.size() <= 40
+        && data.mainInscl is string && data.mainInscl.size() <= 20
+        && data.projCode is string && data.projCode.size() <= 40
+        && data.htypeHcode is string && data.htypeHcode.size() <= 20
+        && data.provHcode is string && data.provHcode.size() <= 20
+        && data.hcode is string && data.hcode.size() <= 20
+        && isNonNegNum(data.claimed)
+        && isNonNegNum(data.op)
+        && isNonNegNum(data.ipPaid)
+        && isNonNegNum(data.hcTotal)
+        && isNonNegNum(data.aeTotal)
+        && isNonNegNum(data.pp)
+        && isNonNegNum(data.fs)
+        && isNonNegNum(data.otherPaid)
+        && isNonNegNum(data.totalComp)
+        && data.importBatchId is string && data.importBatchId.size() >= 1 && data.importBatchId.size() <= 128
+        && data.importBatchId.matches('^[a-zA-Z0-9_\\-]+$')
+        && data.createdAt is timestamp;
+    }
+
+    // --- Collection Rules ---
+    match /units/{unitId} {
+      allow get: if isVerified()
+        && isValidId(unitId)
+        && unitId == request.auth.uid
+        && (resource == null || existing().ownerUid == request.auth.uid);
+      allow list: if isVerified() && existing().ownerUid == request.auth.uid;
+      allow create: if isVerified()
+        && isValidId(unitId)
+        && isValidUnitProfile(incoming(), unitId)
+        && incoming().createdAt == request.time
+        && incoming().updatedAt == request.time;
+      allow update: if isVerified()
+        && isValidId(unitId)
+        && isValidUnitProfile(incoming(), unitId)
+        && existing().ownerUid == request.auth.uid
+        && incoming().ownerUid == existing().ownerUid
+        && incoming().createdAt == existing().createdAt
+        && incoming().updatedAt == request.time
+        && incoming().diff(existing()).affectedKeys().hasOnly([
+          'unitCode', 'unitName', 'districtName', 'templateVersion', 'ssoEndpointUrl', 'updatedAt'
+        ]);
+      allow delete: if isVerified() && isValidId(unitId) && existing().ownerUid == request.auth.uid;
+
+      match /claimRecords/{recordId} {
+        allow get: if isVerified()
+          && isValidId(unitId)
+          && isValidId(recordId)
+          && unitId == request.auth.uid
+          && (resource == null || existing().ownerUid == request.auth.uid)
+          && isUnitOwner(unitId);
+        allow list: if isVerified() && existing().ownerUid == request.auth.uid;
+        allow create: if isVerified()
+          && isValidId(unitId)
+          && isValidId(recordId)
+          && isValidClaimRecord(incoming(), unitId)
+          && incoming().createdAt == request.time
+          && incoming().updatedAt == request.time
+          && isUnitOwner(unitId);
+        allow update: if isVerified()
+          && isValidId(unitId)
+          && isValidId(recordId)
+          && isValidClaimRecord(incoming(), unitId)
+          && existing().ownerUid == request.auth.uid
+          && incoming().ownerUid == existing().ownerUid
+          && incoming().unitId == existing().unitId
+          && incoming().importBatchId == existing().importBatchId
+          && incoming().createdAt == existing().createdAt
+          && incoming().updatedAt == request.time
+          && isUnitOwner(unitId)
+          && (
+            // Action: Update payable & note
+            incoming().diff(existing()).affectedKeys().hasOnly(['payableAmount', 'note', 'updatedAt'])
+            // Action: Edit full period row values
+            || incoming().diff(existing()).affectedKeys().hasOnly([
+              'seqNo', 'reportPeriod', 'monthKey', 'totalCases', 'claimedAmount',
+              'normalReceivedAmount', 'normalCompensatedCases', 'normalUncompensatedCases',
+              'appealReceivedAmount', 'appealReceivedCases', 'appealUncompensatedCases',
+              'herbalAmount', 'herbalCases', 'aeAmount', 'aeCases',
+              'ppAmount', 'ppCases', 'fsAmount', 'fsCases',
+              'summaryAmount', 'summaryCases', 'payableAmount', 'note', 'updatedAt'
+            ])
+          );
+        allow delete: if isVerified()
+          && isValidId(unitId)
+          && isValidId(recordId)
+          && existing().ownerUid == request.auth.uid
+          && isUnitOwner(unitId);
+      }
+
+      match /ssoSubmissions/{submissionId} {
+        allow get: if isVerified()
+          && isValidId(unitId)
+          && isValidId(submissionId)
+          && unitId == request.auth.uid
+          && (resource == null || existing().ownerUid == request.auth.uid)
+          && isUnitOwner(unitId);
+        allow list: if isVerified() && existing().ownerUid == request.auth.uid;
+        allow create: if isVerified()
+          && isValidId(unitId)
+          && isValidId(submissionId)
+          && isValidSsoSubmission(incoming(), unitId)
+          && incoming().status == 'submitted'
+          && incoming().createdAt == request.time
+          && isUnitOwner(unitId);
+        allow update: if isVerified()
+          && isValidId(unitId)
+          && isValidId(submissionId)
+          && isValidSsoSubmission(incoming(), unitId)
+          && existing().ownerUid == request.auth.uid
+          && existing().status == 'submitted'
+          && incoming().status == 'acknowledged'
+          && incoming().ownerUid == existing().ownerUid
+          && incoming().unitId == existing().unitId
+          && incoming().createdAt == existing().createdAt
+          && isUnitOwner(unitId)
+          && incoming().diff(existing()).affectedKeys().hasOnly(['status']);
+        allow delete: if false;
+      }
+
+      match /apiKeys/{keyId} {
+        allow get: if isVerified()
+          && isValidId(unitId)
+          && isValidId(keyId)
+          && unitId == request.auth.uid
+          && (resource == null || existing().ownerUid == request.auth.uid)
+          && isUnitOwner(unitId);
+        allow list: if isVerified() && existing().ownerUid == request.auth.uid;
+        allow create: if isVerified()
+          && isValidId(unitId)
+          && isValidId(keyId)
+          && isValidApiKeyRecord(incoming(), unitId)
+          && incoming().status == 'active'
+          && incoming().createdAt == request.time
+          && incoming().updatedAt == request.time
+          && isUnitOwner(unitId);
+        allow update: if isVerified()
+          && isValidId(unitId)
+          && isValidId(keyId)
+          && isValidApiKeyRecord(incoming(), unitId)
+          && existing().ownerUid == request.auth.uid
+          && existing().status == 'active'
+          && incoming().status == 'revoked'
+          && incoming().ownerUid == existing().ownerUid
+          && incoming().unitId == existing().unitId
+          && incoming().keyPrefix == existing().keyPrefix
+          && incoming().keyHash == existing().keyHash
+          && incoming().createdAt == existing().createdAt
+          && incoming().updatedAt == request.time
+          && isUnitOwner(unitId)
+          && incoming().diff(existing()).affectedKeys().hasOnly(['status', 'updatedAt']);
+        allow delete: if isVerified()
+          && isValidId(unitId)
+          && isValidId(keyId)
+          && existing().ownerUid == request.auth.uid
+          && isUnitOwner(unitId);
+      }
+
+      match /repTransactions/{txId} {
+        allow get: if isVerified()
+          && isValidId(unitId)
+          && isValidId(txId)
+          && unitId == request.auth.uid
+          && (resource == null || existing().ownerUid == request.auth.uid)
+          && isUnitOwner(unitId);
+        allow list: if isVerified() && existing().ownerUid == request.auth.uid;
+        allow create: if isVerified()
+          && isValidId(unitId)
+          && isValidId(txId)
+          && isValidRepTransaction(incoming(), unitId)
+          && incoming().createdAt == request.time
+          && isUnitOwner(unitId);
+        allow update: if false;
+        allow delete: if isVerified()
+          && isValidId(unitId)
+          && isValidId(txId)
+          && existing().ownerUid == request.auth.uid
+          && isUnitOwner(unitId);
+      }
+    }
+  }
+}

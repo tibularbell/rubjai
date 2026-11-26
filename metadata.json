@@ -1,0 +1,6 @@
+{
+  "name": "ระบบรายงานพึงรับ-พึงจ่าย รพ.สต.",
+  "description": "ระบบรายงานพึงรับ-พึงจ่าย รพ.สต. (V.3 5367) บนฐานข้อมูล NoSQL แบบเรียลไทม์ รองรับการนำเข้า-ส่งออก Excel/CSV, REST API และแดชบอร์ดสรุปผลรายเดือนสำหรับบุคลากรทางการแพทย์",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
